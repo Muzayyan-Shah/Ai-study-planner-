@@ -130,10 +130,9 @@ def calculate_schedule_cost(current_timeline, all_tasks):
             if hours <= 0: continue
             task = task_map[task_name]
             
-            # Backend matching updated for new mobile categories
-            if task.trait == "🔥 Heavy" or task.difficulty >= 4:
+            if task.trait == "🔥 Hard" or task.difficulty >= 4:
                 heavy_count += 1
-            if task.trait == "⏳ Procrastinate" and day.day_number > 2:
+            if task.trait == "⏳ Delay" and day.day_number > 2:
                 penalty += 35 
 
         if heavy_count > 1:
@@ -192,7 +191,7 @@ st.set_page_config(page_title="AI Study Planner", page_icon="🧠", layout="wide
 if "user_profile" not in st.session_state:
     st.session_state.user_profile = None
 
-# --- LOGIN & SIGNUP RE-DESIGN ---
+# --- LOGIN & SIGNUP INTERFACE ---
 if st.session_state.user_profile is None:
     st.markdown("<h1 style='text-align: center; color: #4A90E2;'>🧠 AI Smart Study Planner</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center;'>Organize your studies, avoid burnout, and plan your schedule automatically.</p>", unsafe_allow_html=True)
@@ -202,12 +201,10 @@ if st.session_state.user_profile is None:
     with auth_col2:
         auth_mode = st.tabs(["🔐 Log In", "📝 Sign Up"])
         
-        # 1. TAB: LOG IN
         with auth_mode[0]:
             with st.form("login_form"):
                 login_email = st.text_input("Email Address", placeholder="e.g., student@university.edu").strip().lower()
                 login_pass = st.text_input("Password", type="password", placeholder="••••••••")
-                
                 login_btn = st.form_submit_button("Log In", use_container_width=True)
                 
                 if login_btn and login_email and login_pass:
@@ -224,7 +221,6 @@ if st.session_state.user_profile is None:
                     else:
                         st.error("Incorrect email or password. Please try again.")
                         
-        # 2. TAB: SIGN UP
         with auth_mode[1]:
             with st.form("signup_form"):
                 reg_email = st.text_input("Email Address *", placeholder="e.g., student@university.edu").strip().lower()
@@ -233,7 +229,6 @@ if st.session_state.user_profile is None:
                 col_a, col_b = st.columns(2)
                 first_name = col_a.text_input("First Name *")
                 last_name = col_b.text_input("Last Name *")
-                
                 signup_btn = st.form_submit_button("Create Account", use_container_width=True)
                 
                 if signup_btn:
@@ -250,7 +245,6 @@ if st.session_state.user_profile is None:
 profile = st.session_state.user_profile
 user_email = profile["email"]
 
-# Sidebar Profile Header
 st.sidebar.markdown(f"<div style='background-color:#1E1E1E; padding:15px; border-radius:10px; margin-bottom:15px;'>"
                     f"<h3 style='margin:0; color:#4A90E2;'>👋 Hello,</h3>"
                     f"<p style='margin:5px 0; font-size:16px; font-weight:bold;'>{profile['first_name']} {profile['last_name']}</p>"
@@ -266,7 +260,6 @@ st.sidebar.subheader("⚙️ Planner Settings")
 user_max_hours = st.sidebar.slider("Daily Study Limit (Max Hours)", 2, 10, 6)
 timeline_range = st.sidebar.slider("Planning Range (Days Ahead)", 3, 7, 5)
 
-# Sidebar Feedback Portal
 st.sidebar.write("---")
 st.sidebar.subheader("📣 Share Feedback")
 with st.sidebar.form("feedback_form", clear_on_submit=True):
@@ -283,7 +276,7 @@ with st.sidebar.form("feedback_form", clear_on_submit=True):
         conn.close()
         st.sidebar.success("Thank you for your feedback!")
 
-# Main Application Dashboard
+# Main Dashboard Workspace
 st.title("🧠 Your Personalized Study Dashboard")
 st.markdown("Add your upcoming exam topics or assignments below, and let the AI find the healthiest daily study path.")
 st.write("---")
@@ -298,11 +291,10 @@ with col1:
         hours = st.number_input("Total Study Time Needed (Hours)", min_value=1, max_value=40, value=6)
         days_left = st.number_input("Days Left Until Deadline", min_value=1, max_value=int(timeline_range), value=3)
         
-        # FIXED: Compressed single-word categories for optimal mobile layout visibility
-        trait = st.selectbox("Subject Type:", [
-            "🧠 Normal",
-            "🔥 Heavy",
-            "⏳ Procrastinate",
+        trait = st.selectbox("Subject Category:", [
+            "🧠 Standard",
+            "🔥 Hard",
+            "⏳ Delay",
             "📖 Reading"
         ])
         
@@ -317,6 +309,20 @@ with col1:
             conn.close()
             st.success(f"Successfully saved {name}!")
             st.rerun()
+
+    # UPDATED: Replaced "procrastination" with the conversational "constantly putting it off" phrasing
+    st.write("---")
+    st.markdown("💡 **Category Guide:**")
+    st.markdown(
+        """
+        | Category | Meaning |
+        | :--- | :--- |
+        | **🧠 Standard** | Normal, balanced course |
+        | **🔥 Hard** | Burnout-heavy (complex concepts) |
+        | **⏳ Delay** | Constantly putting it off |
+        | **📖 Reading** | Theory or reading-heavy |
+        """
+    )
 
 with col2:
     st.subheader("📋 Your Saved Subjects")
