@@ -6,19 +6,16 @@ import os
 from datetime import datetime, timedelta
 
 # ==========================================
-# 0. AUTOMATIC DATABASE SELF-HEALING MIGRATION
+# 0. AUTOMATIC DATABASE SELF-HEALING
 # ==========================================
-# This ensures any old structural column conflicts are cleanly wiped automatically
 DB_FILE = "smart_planner.db"
 if os.path.exists(DB_FILE):
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
-        # Test if the old schema exists by checking for 'username'
         cursor.execute("PRAGMA table_info(users);")
         columns = [col[1] for col in cursor.fetchall()]
         conn.close()
-        # If 'username' is found instead of the new 'email' structure, wipe it
         if columns and "username" in columns:
             os.remove(DB_FILE)
     except Exception:
@@ -31,7 +28,6 @@ def init_db():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     
-    # Users Table: Email is the secure primary key identity node
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             email TEXT PRIMARY KEY,
@@ -41,7 +37,6 @@ def init_db():
         )
     """)
     
-    # Tasks Table: Directly linked to student accounts via email relation
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,7 +50,6 @@ def init_db():
         )
     """)
     
-    # Feedback Portal Database Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS feedback (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,7 +64,6 @@ def init_db():
 
 init_db()
 
-# Cryptography & Security Handshake Tools
 def make_hashes(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
 
@@ -93,7 +86,7 @@ def add_user(email, password, first_name, last_name):
         conn.commit()
         success = True
     except sqlite3.IntegrityError:
-        success = False  # Triggers safely if email identity node is a duplicate
+        success = False  
     conn.close()
     return success
 
@@ -124,35 +117,29 @@ class StudyDay:
         self.total_assigned_hours += hours
 
 def calculate_schedule_cost(current_timeline, all_tasks):
-    """ADVANCED COGNITIVE COST FATIGUE FUNCTION"""
     penalty = 0
     task_map = {t.name: t for t in all_tasks}
     
     for day in current_timeline:
-        # 1. Quadratic Human Burnout Spike Multiplier
         if day.total_assigned_hours > day.max_hours:
             excess = day.total_assigned_hours - day.max_hours
             penalty += (excess ** 2) * 25  
             
-        # 2. Behavioral Psychological Constraint Processing
         heavy_count = 0
         for task_name, hours in day.slots.items():
             if hours <= 0: continue
             task = task_map[task_name]
             if task.trait == "Brain Melter" or task.difficulty >= 4:
                 heavy_count += 1
-            # Heavily penalize putting off Procrastination Risks to later windows
             if task.trait == "Procrastination Risk" and day.day_number > 2:
                 penalty += 35 
 
-        # Contextual Fatigue Overlap Threshold Check
         if heavy_count > 1:
             penalty += 60
             
     return penalty
 
 def optimize_schedule(all_tasks, total_days=4, max_daily_hours=6):
-    """HILL CLIMBING AGENT STABILIZATION LOOP"""
     current_timeline = []
     today = datetime.now()
     for i in range(1, total_days + 1):
@@ -161,7 +148,6 @@ def optimize_schedule(all_tasks, total_days=4, max_daily_hours=6):
     
     if not all_tasks: return current_timeline
 
-    # Initialize greedy assignments baseline matrix
     for task in all_tasks:
         hours_left = task.hours_needed
         for day in current_timeline:
@@ -172,7 +158,6 @@ def optimize_schedule(all_tasks, total_days=4, max_daily_hours=6):
                     day.add_study_hours(task.name, allocated)
                     hours_left -= allocated
 
-    # Execute 20,000 neighborhood modification state shakes
     for _ in range(20000):
         current_score = calculate_schedule_cost(current_timeline, all_tasks)
         random_task = random.choice(all_tasks)
@@ -184,15 +169,12 @@ def optimize_schedule(all_tasks, total_days=4, max_daily_hours=6):
         from_day = random.choice(possible_src)
         to_day = random.choice([d for d in possible_tgt if d.day_number != from_day.day_number])
         
-        # Mutation Shift Trial
         from_day.slots[random_task.name] -= 1
         from_day.total_assigned_hours -= 1
         to_day.slots[random_task.name] = to_day.slots.get(random_task.name, 0) + 1
         to_day.total_assigned_hours += 1
         
-        # Heuristic Assessment Handshake
         if calculate_schedule_cost(current_timeline, all_tasks) > current_score:
-            # Absolute local optimization fallback reversion
             from_day.slots[random_task.name] += 1
             from_day.total_assigned_hours += 1
             to_day.slots[random_task.name] -= 1
@@ -201,31 +183,30 @@ def optimize_schedule(all_tasks, total_days=4, max_daily_hours=6):
     return current_timeline
 
 # ==========================================
-# 3. INTERACTIVE WEB INTERFACE UX (Streamlit)
+# 3. STREAMLIT FRONTEND USER INTERFACE
 # ==========================================
-st.set_page_config(page_title="AI Smart Study Platform", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="AI Study Planner", page_icon="🧠", layout="wide")
 
 if "user_profile" not in st.session_state:
     st.session_state.user_profile = None
 
-# --- UPGRADED HIGHLY INTERACTIVE ENTRY PORTAL INTERFACE ---
+# --- SIMPLIFIED LOGIN & SIGNUP RE-DESIGN ---
 if st.session_state.user_profile is None:
-    st.markdown("<h1 style='text-align: center; color: #4A90E2;'>🧠 AI Academic Optimization Engine</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>Welcome to the high-level cognitive scheduling environment. Manage your workload scientifically.</p>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #4A90E2;'>🧠 AI Smart Study Planner</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'>Organize your studies, avoid burnout, and plan your schedule automatically.</p>", unsafe_allow_html=True)
     
-    # Beautiful Centered UI Box Segment Control Panel
     auth_col1, auth_col2, auth_col3 = st.columns([1, 2, 1])
     
     with auth_col2:
-        auth_mode = st.tabs(["🔐 Secure Login Portal", "📝 Create Student Account"])
+        auth_mode = st.tabs(["🔐 Log In", "📝 Sign Up"])
         
-        # 1. INTERACTIVE TAB: ACCOUNT ACCESS VALIDATION
+        # 1. TAB: LOG IN
         with auth_mode[0]:
             with st.form("login_form"):
-                login_email = st.text_input("Academic Email ID Address", placeholder="e.g., student@university.edu").strip().lower()
-                login_pass = st.text_input("Security Account Password", type="password", placeholder="••••••••")
+                login_email = st.text_input("Email Address", placeholder="e.g., student@university.edu").strip().lower()
+                login_pass = st.text_input("Password", type="password", placeholder="••••••••")
                 
-                login_btn = st.form_submit_button("Authenticate Workspace Session", use_container_width=True)
+                login_btn = st.form_submit_button("Log In", use_container_width=True)
                 
                 if login_btn and login_email and login_pass:
                     user_meta = check_user(login_email, login_pass)
@@ -235,61 +216,61 @@ if st.session_state.user_profile is None:
                             "last_name": user_meta[1],
                             "email": user_meta[2]
                         }
-                        st.balloons() # Interactive celebratory graphical element!
-                        st.success(f"Access granted. Initializing nodes for {user_meta[0]}...")
+                        st.balloons() 
+                        st.success(f"Welcome back, {user_meta[0]}!")
                         st.rerun()
                     else:
-                        st.error("HANDSHAKE REFUSED: Invalid configuration signatures. Check parameters.")
+                        st.error("Incorrect email or password. Please try again.")
                         
-        # 2. INTERACTIVE TAB: IDENTITY PROFILE PROVISIONING
+        # 2. TAB: SIGN UP
         with auth_mode[1]:
             with st.form("signup_form"):
-                reg_email = st.text_input("Primary Academic Email Address *", placeholder="e.g., name@campus.edu").strip().lower()
-                reg_pass = st.text_input("Establish Private Security Password *", type="password", placeholder="Minimum 6 characters")
+                reg_email = st.text_input("Email Address *", placeholder="e.g., student@university.edu").strip().lower()
+                reg_pass = st.text_input("Create Password *", type="password", placeholder="Choose a strong password")
                 
                 col_a, col_b = st.columns(2)
-                first_name = col_a.text_input("First Name Name *")
-                last_name = col_b.text_input("Last Name Name *")
+                first_name = col_a.text_input("First Name *")
+                last_name = col_b.text_input("Last Name *")
                 
-                signup_btn = st.form_submit_button("Compile & Launch Profile Node", use_container_width=True)
+                signup_btn = st.form_submit_button("Create Account", use_container_width=True)
                 
                 if signup_btn:
                     if not (reg_email and reg_pass and first_name and last_name):
-                        st.error("All workspace initialization fields marked with (*) must be declared.")
+                        st.error("Please fill in all fields marked with an asterisk (*).")
                     elif add_user(reg_email, reg_pass, first_name, last_name):
-                        st.toast("Profile structured perfectly! 🚀")
-                        st.success("Account constructed cleanly! Please adjust your selector switch back to 'Secure Login Portal' to verify.")
+                        st.toast("Account created successfully! 🎉")
+                        st.success("Your account is ready! Now, please click the 'Log In' tab above to sign in.")
                     else:
-                        st.error("IDENTITY REGISTRATION ERROR: That database directory row cell is already mapped.")
+                        st.error("This email address is already registered.")
     st.stop()
 
-# --- AUTHENTICATED RUNTIME ENVIRONMENT ACCESS CONTROL ---
+# --- AUTHENTICATED RUNTIME ENVIRONMENT ---
 profile = st.session_state.user_profile
 user_email = profile["email"]
 
-# Responsive Sidebar Metrics Layout 
+# Sidebar Profile Header
 st.sidebar.markdown(f"<div style='background-color:#1E1E1E; padding:15px; border-radius:10px; margin-bottom:15px;'>"
-                    f"<h3 style='margin:0; color:#4A90E2;'>👋 Connected</h3>"
+                    f"<h3 style='margin:0; color:#4A90E2;'>👋 Hello,</h3>"
                     f"<p style='margin:5px 0; font-size:16px; font-weight:bold;'>{profile['first_name']} {profile['last_name']}</p>"
                     f"<p style='margin:0; font-size:12px; color:#888;'>{user_email}</p>"
                     f"</div>", unsafe_allow_html=True)
 
-if st.sidebar.button("Terminated Current Session (Logout)", type="secondary", use_container_width=True):
+if st.sidebar.button("Log Out", type="secondary", use_container_width=True):
     st.session_state.user_profile = None
     st.rerun()
 
 st.sidebar.write("---")
-st.sidebar.subheader("⚙️ Local Heuristic Constraints")
-user_max_hours = st.sidebar.slider("Personal Burnout Threshold (Max Daily Hours)", 2, 10, 6)
-timeline_range = st.sidebar.slider("Schedule Window Grid Boundaries (Days)", 3, 7, 5)
+st.sidebar.subheader("⚙️ Planner Settings")
+user_max_hours = st.sidebar.slider("Daily Study Limit (Max Hours)", 2, 10, 6)
+timeline_range = st.sidebar.slider("Planning Range (Days Ahead)", 3, 7, 5)
 
-# SIDEBAR TELEMETRY INTERACTIVE FEEDBACK WIDGET
+# Sidebar Feedback Portal
 st.sidebar.write("---")
-st.sidebar.subheader("📣 Live Experience Telemetry")
+st.sidebar.subheader("📣 Share Feedback")
 with st.sidebar.form("feedback_form", clear_on_submit=True):
-    rating = st.slider("Rate Plan Output Balancing (1-5 ⭐)", 1, 5, 5)
-    comment = st.text_area("Log bugs, features, or UX feedback:", placeholder="What functionality can we improve next?")
-    feedback_submit = st.form_submit_button("Transmit Feedback Packet")
+    rating = st.slider("Rate your experience (1-5 ⭐)", 1, 5, 5)
+    comment = st.text_area("What features should we add or fix next?", placeholder="Tell us your suggestions...")
+    feedback_submit = st.form_submit_button("Submit Feedback")
     
     if feedback_submit and comment:
         conn = sqlite3.connect(DB_FILE)
@@ -298,31 +279,31 @@ with st.sidebar.form("feedback_form", clear_on_submit=True):
                        (user_email, rating, comment, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         conn.commit()
         conn.close()
-        st.sidebar.success("Feedback saved directly to backend records. Thank you!")
+        st.sidebar.success("Thank you for your feedback!")
 
-# Main Dashboard Workspace
-st.title("🧠 Behavioral Study Optimization Workspace Matrix")
-st.markdown("Your custom heuristics are dynamically parsed against student fatigue models to keep you balanced.")
+# Main Application Title Dashboard
+st.title("🧠 Your Personalized Study Dashboard")
+st.markdown("Add your upcoming exam topics or assignments below, and let the AI find the healthiest daily study path.")
 st.write("---")
 
 col1, col2 = st.columns([1, 2])
 
 with col1:
-    st.subheader("📥 Log Course Workload")
+    st.subheader("📥 Add a New Subject")
     with st.form("task_form", clear_on_submit=True):
-        name = st.text_input("Course Domain Title", placeholder="e.g., Theory of Automata")
-        difficulty = st.slider("Absolute Complexity Rating", 1, 5, 3)
-        hours = st.number_input("Study Time Multiplier Needed", min_value=1, max_value=40, value=6)
-        days_left = st.number_input("Days Until Evaluation Matrix", min_value=1, max_value=int(timeline_range), value=3)
+        name = st.text_input("Subject Title", placeholder="e.g., Data Structures")
+        difficulty = st.slider("Difficulty Level (1 = Easy, 5 = Hard)", 1, 5, 3)
+        hours = st.number_input("Total Study Time Needed (Hours)", min_value=1, max_value=40, value=6)
+        days_left = st.number_input("Days Left Until Deadline", min_value=1, max_value=int(timeline_range), value=3)
         
-        trait = st.selectbox("Your Cognitive Experience with this Domain:", [
+        trait = st.selectbox("How do you feel about this subject?", [
             "Normal Core Subject",
             "Brain Melter (Causes high mental burnout/fatigue)",
             "Procrastination Risk (You constantly keep putting it off)",
             "Reading Heavy (Requires passive conceptual retention)"
         ])
         
-        submit = st.form_submit_button("Commit Entry to Workspace DB", use_container_width=True)
+        submit = st.form_submit_button("Save Subject", use_container_width=True)
         
         if submit and name:
             clean_trait = trait.split(" (")[0]
@@ -332,11 +313,11 @@ with col1:
                            (user_email, name, difficulty, hours, days_left, clean_trait))
             conn.commit()
             conn.close()
-            st.success(f"Recorded record tracking matrices for {name}!")
+            st.success(f"Successfully saved {name}!")
             st.rerun()
 
 with col2:
-    st.subheader("📋 Core Relational Database Sync Grid")
+    st.subheader("📋 Your Saved Subjects")
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute("SELECT id, name, difficulty, hours, days_left, trait FROM tasks WHERE email=?", (user_email,))
@@ -344,42 +325,42 @@ with col2:
     conn.close()
     
     if not rows:
-        st.info("Your database workspace is completely clear. Register your courses on the left panel.")
+        st.info("No subjects added yet. Use the left panel to register your workload.")
     else:
         total_workload_hours = sum(r[3] for r in rows)
         
         metric_col1, metric_col2 = st.columns(2)
-        metric_col1.metric("Active Modules Matrix", f"{len(rows)} Courses")
-        metric_col2.metric("Accumulated Work Hours Required", f"{total_workload_hours} Hours")
+        metric_col1.metric("Total Subjects Registered", f"{len(rows)} Courses")
+        metric_col2.metric("Total Study Hours Needed", f"{total_workload_hours} Hours")
         
-        display_list = [{"ID": r[0], "Course Domain": r[1], "Difficulty ⭐": r[2], "Target Hours ⏱️": r[3], "Days Remaining 📅": r[4], "Cognitive Profile": r[5]} for r in rows]
+        display_list = [{"ID": r[0], "Subject Title": r[1], "Difficulty ⭐": r[2], "Study Hours ⏱️": r[3], "Days Left 📅": r[4], "Subject Category": r[5]} for r in rows]
         st.dataframe(display_list, use_container_width=True)
         
         del_col1, del_col2 = st.columns([2, 1])
-        del_id = del_col1.number_input("Enter Row ID to Delete", min_value=1, step=1)
-        if del_col2.button("🗑️ Drop Connection Row", use_container_width=True):
+        del_id = del_col1.number_input("Enter ID number to delete", min_value=1, step=1)
+        if del_col2.button("🗑️ Delete Subject", use_container_width=True):
             conn = sqlite3.connect(DB_FILE)
             cursor = conn.cursor()
             cursor.execute("DELETE FROM tasks WHERE id=? AND email=?", (del_id, user_email))
             conn.commit()
             conn.close()
-            st.toast("Row removed completely.")
+            st.toast("Subject deleted successfully.")
             st.rerun()
 
 st.write("---")
 
-# --- EXECUTE LOCAL SEARCH VIA CLOUD PROFILE ---
+# --- AI SCHEDULER MATRIX ENGINE GENERATION ---
 if rows:
-    if st.button("🚀 INITIATE STRUCTURAL BEHAVIORAL NEURAL PLANNER OPTIMIZATION MAP", type="primary", use_container_width=True):
+    if st.button("🚀 GENERATE MY OPTIMIZED STUDY PLAN", type="primary", use_container_width=True):
         ai_tasks_input = [StudyTask(r[1], r[2], r[3], r[4], r[5]) for r in rows]
         
-        with st.spinner("Executing 20,000 algorithmic neighborhood matrix state swaps over your behavioral pipeline..."):
+        with st.spinner("AI is calculating the best daily breakdown to minimize your mental fatigue..."):
             optimized_timeline = optimize_schedule(ai_tasks_input, total_days=timeline_range, max_daily_hours=user_max_hours)
             final_pain_score = calculate_schedule_cost(optimized_timeline, ai_tasks_input)
             
-        st.success(f"🎉 Global Matrix Optimum Stabilized! Calculated Friction Metrics Penalty Value: {final_pain_score}")
+        st.success(f"🎉 Optimized Plan Computed Successfully!")
         
-        st.subheader("📅 Your Customized Cognitive Roadmap Calendar")
+        st.subheader("📅 Your Balanced Study Calendar")
         grid_cols = st.columns(len(optimized_timeline))
         
         for idx, day in enumerate(optimized_timeline):
@@ -391,32 +372,34 @@ if rows:
                 else:
                     st.success(f"🟢 {day.date_string}")
                 
-                st.metric(label="Calculated Load", value=f"{day.total_assigned_hours}/{user_max_hours} hrs")
+                st.metric(label="Study Load", value=f"{day.total_assigned_hours}/{user_max_hours} hrs")
                 
                 active_blocks = {task: hrs for task, hrs in day.slots.items() if hrs > 0}
                 if not active_blocks:
-                    st.caption("✨ Absolute Rest / Buffer Window")
+                    st.caption("✨ Open Window / Rest Day")
                 else:
                     for t_name, t_hours in active_blocks.items():
                         st.markdown(f"📖 **{t_name}**: `{t_hours} hrs`")
                 st.write("---")
-                # --- ADMIN VIEW FEEDBACK SUBMISSIONS ---
-st.write("---")
-with st.expander("🔐 Developer Admin Console"):
-    admin_password = st.text_input("Enter Admin Password to view User Feedback", type="password")
-    if admin_password == "admin123": # Choose your own private password here
-        st.subheader("📣 Live User Feedback Telemetry Logs")
-        conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, email, rating, comment, submitted_at FROM feedback ORDER BY id DESC")
-        feedback_rows = cursor.fetchall()
-        conn.close()
-        
-        if not feedback_rows:
-            st.info("No feedback records have been transmitted to the backend database yet.")
-        else:
-            feedback_list = [
-                {"Feedback ID": f[0], "Student Email": f[1], "Rating ⭐": f[2], "Comment/Suggestion": f[3], "Timestamp 📅": f[4]} 
-                for f in feedback_rows
-            ]
-            st.dataframe(feedback_list, use_container_width=True)
+
+# --- TRULY HIDDEN ADMIN VIEW (VIA URL PARAMETER) ---
+query_params = st.query_params
+if "admin" in query_params and query_params["admin"] == "secretkey123":
+    st.write("---")
+    st.subheader("🛠️ Hidden Admin Panel")
+    st.caption("Only you can see this section using your private key parameter link.")
+    
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, email, rating, comment, submitted_at FROM feedback ORDER BY id DESC")
+    feedback_rows = cursor.fetchall()
+    conn.close()
+    
+    if not feedback_rows:
+        st.info("No feedback submissions found in the database.")
+    else:
+        feedback_list = [
+            {"Feedback ID": f[0], "User Email": f[1], "Rating ⭐": f[2], "Comment": f[3], "Date Submitted 📅": f[4]} 
+            for f in feedback_rows
+        ]
+        st.dataframe(feedback_list, use_container_width=True)
