@@ -129,9 +129,11 @@ def calculate_schedule_cost(current_timeline, all_tasks):
         for task_name, hours in day.slots.items():
             if hours <= 0: continue
             task = task_map[task_name]
-            if task.trait == "Brain Melter" or task.difficulty >= 4:
+            
+            # Backend matching updated for new mobile categories
+            if task.trait == "🔥 Heavy" or task.difficulty >= 4:
                 heavy_count += 1
-            if task.trait == "Procrastination Risk" and day.day_number > 2:
+            if task.trait == "⏳ Procrastinate" and day.day_number > 2:
                 penalty += 35 
 
         if heavy_count > 1:
@@ -190,7 +192,7 @@ st.set_page_config(page_title="AI Study Planner", page_icon="🧠", layout="wide
 if "user_profile" not in st.session_state:
     st.session_state.user_profile = None
 
-# --- SIMPLIFIED LOGIN & SIGNUP RE-DESIGN ---
+# --- LOGIN & SIGNUP RE-DESIGN ---
 if st.session_state.user_profile is None:
     st.markdown("<h1 style='text-align: center; color: #4A90E2;'>🧠 AI Smart Study Planner</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center;'>Organize your studies, avoid burnout, and plan your schedule automatically.</p>", unsafe_allow_html=True)
@@ -281,7 +283,7 @@ with st.sidebar.form("feedback_form", clear_on_submit=True):
         conn.close()
         st.sidebar.success("Thank you for your feedback!")
 
-# Main Application Title Dashboard
+# Main Application Dashboard
 st.title("🧠 Your Personalized Study Dashboard")
 st.markdown("Add your upcoming exam topics or assignments below, and let the AI find the healthiest daily study path.")
 st.write("---")
@@ -296,21 +298,21 @@ with col1:
         hours = st.number_input("Total Study Time Needed (Hours)", min_value=1, max_value=40, value=6)
         days_left = st.number_input("Days Left Until Deadline", min_value=1, max_value=int(timeline_range), value=3)
         
-        trait = st.selectbox("How do you feel about this subject?", [
-            "Normal Core Subject",
-            "Brain Melter (Causes high mental burnout/fatigue)",
-            "Procrastination Risk (You constantly keep putting it off)",
-            "Reading Heavy (Requires passive conceptual retention)"
+        # FIXED: Compressed single-word categories for optimal mobile layout visibility
+        trait = st.selectbox("Subject Type:", [
+            "🧠 Normal",
+            "🔥 Heavy",
+            "⏳ Procrastinate",
+            "📖 Reading"
         ])
         
         submit = st.form_submit_button("Save Subject", use_container_width=True)
         
         if submit and name:
-            clean_trait = trait.split(" (")[0]
             conn = sqlite3.connect(DB_FILE)
             cursor = conn.cursor()
             cursor.execute("INSERT INTO tasks(email, name, difficulty, hours, days_left, trait) VALUES(?,?,?,?,?,?)",
-                           (user_email, name, difficulty, hours, days_left, clean_trait))
+                           (user_email, name, difficulty, hours, days_left, trait))
             conn.commit()
             conn.close()
             st.success(f"Successfully saved {name}!")
